@@ -326,7 +326,7 @@ const LS_KEY_BACKEND = 'bodega_backend_url';
 const LS_KEY_SESSION = 'bodega_session';
 const DEFAULT_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxQ-7d-6uSe3DPtfQp2HwYgTpxIs23Q9VNQ8ROxYd-ywOyUkhRxUND2Lsw7QiaWoYke/exec';
 
-function getBackendUrl(){ return DEFAULT_BACKEND_URL; }
+function getBackendUrl(){ return localStorage.getItem(LS_KEY_BACKEND) || DEFAULT_BACKEND_URL; }
 function setBackendUrl(u){ localStorage.setItem(LS_KEY_BACKEND, u); }
 
 // PIN simple para evitar que cualquiera, sin querer o por curiosidad,
@@ -362,33 +362,24 @@ document.getElementById('btnGuardarConfig').addEventListener('click', ()=>{
 async function apiCall(action, payload){
   const url = getBackendUrl();
   if (!url) throw new Error('Falta configurar la URL del backend (Apps Script).');
-  let ultimoError;
-  for (let intento = 0; intento < 2; intento++){
-    const controller = new AbortController();
-    const timeoutId = setTimeout(()=>controller.abort(), 60000);
-    try{
-      const res = await fetch(url, {
-        method:'POST',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify(Object.assign({action}, payload)),
-        signal: controller.signal,
-        cache:'no-store'
-      });
-      const texto = await res.text();
-      clearTimeout(timeoutId);
-      if (!res.ok) throw new Error(`El backend respondió con HTTP ${res.status}.`);
-      try { return JSON.parse(texto); }
-      catch (err) { throw new Error('El backend respondió algo que no es JSON. Revisa la implementación de Apps Script.'); }
-    }catch(err){
-      clearTimeout(timeoutId);
-      ultimoError = err;
-      if (intento === 0) await new Promise(resolve => setTimeout(resolve, 1000));
+  const controller = new AbortController();
+  const timeoutId = setTimeout(()=>controller.abort(), 20000);
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(Object.assign({action}, payload)),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return await res.json();
+  }catch(err){
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError'){
+      throw new Error('El backend no respondió a tiempo (20s). Puede estar lento o sin conexión; inténtalo de nuevo en un momento.');
     }
+    throw new Error('No se pudo conectar con el backend. Revisa la URL configurada.');
   }
-  if (ultimoError && ultimoError.name === 'AbortError'){
-    throw new Error('El backend no respondió a tiempo. La URL es correcta, pero la implementación de Apps Script está lenta o necesita autorización.');
-  }
-  throw new Error(ultimoError ? ultimoError.message : 'No se pudo conectar con el backend.');
 }
 
 // ============================================================
@@ -807,7 +798,7 @@ function pintarListaCargasAdmin(cargasRes){
     <div class="table-scroll">
     <table>
       <thead><tr>
-        <th><input type="checkbox" id="chkSeleccionarTodas" aria-label="Seleccionar todas las cargas aprobables"></th><th>Fecha</th><th>Responsable</th><th>Municipio</th><th>Cajas</th><th>Valor/caja</th><th>Total</th><th>Estado</th><th>Foto</th><th></th>
+        <th></th><th>Fecha</th><th>Responsable</th><th>Municipio</th><th>Cajas</th><th>Valor/caja</th><th>Total</th><th>Estado</th><th>Foto</th><th></th>
       </tr></thead>
       <tbody>${filas}</tbody>
     </table>
@@ -815,24 +806,13 @@ function pintarListaCargasAdmin(cargasRes){
   `;
 
   function actualizarBarraMasivo(){
-    const checks = Array.from(el.querySelectorAll('.chk-carga'));
-    const seleccionadas = checks.filter(chk=>chk.checked).length;
-    const chkTodas = el.querySelector('#chkSeleccionarTodas');
-    if (chkTodas){
-      chkTodas.checked = checks.length > 0 && seleccionadas === checks.length;
-      chkTodas.indeterminate = seleccionadas > 0 && seleccionadas < checks.length;
-    }
+    const seleccionadas = el.querySelectorAll('.chk-carga:checked').length;
     document.getElementById('contadorSeleccionadas').textContent = seleccionadas;
     document.getElementById('barraAprobarMasivo').classList.toggle('hidden', seleccionadas === 0);
   }
 
   el.querySelectorAll('.chk-carga').forEach(chk=>{
     chk.addEventListener('change', actualizarBarraMasivo);
-  });
-
-  el.querySelector('#chkSeleccionarTodas').addEventListener('change', (event)=>{
-    el.querySelectorAll('.chk-carga').forEach(chk=>{ chk.checked = event.target.checked; });
-    actualizarBarraMasivo();
   });
 
   el.querySelectorAll('.btn-confirmar-admin').forEach(btn=>{
