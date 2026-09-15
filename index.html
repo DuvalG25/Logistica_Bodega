@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal de Bodega — Cargas y Pagos</title>
+<style>
+:root{
+  --bg:#111a24; --panel:#192534; --panel2:#202f40; --border:#36495c;
+  --text:#edf5fc; --muted:#aebdca; --muted-2:#8294a5;
+  --accent:#76b8ed; --accent-hover:#9bcefa; --accent-soft:#1d3d5b;
+  --accent2:#e9a06a; --accent2-soft:#4a3022;
+  --ok:#7fd99a; --ok-soft:#173324;
+  --danger:#ff8079; --danger-soft:#482522;
+  --radius-md:12px; --radius-lg:16px;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+  padding:24px 16px 60px;
+}
+.wrap{ max-width:880px; margin:0 auto; }
+h1{ font-size:20px; margin:0 0 4px; display:flex; align-items:center; gap:8px }
+.subtitle{ color:var(--muted); font-size:13.5px; margin:0 0 18px }
+.card{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:20px; margin-bottom:16px;
+}
+.hero{
+  background:linear-gradient(120deg,#1d3d5b,#0e2e46);
+  border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:16px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+}
+.hero-left{ display:flex; align-items:center; gap:12px }
+.hero-icon{
+  width:42px; height:42px; border-radius:12px;
+  background:linear-gradient(135deg,#76b8ed,#e9a06a);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.hero h2{ margin:0; font-size:16px }
+.hero p{ margin:2px 0 0; color:var(--muted); font-size:13px }
+.badge{ display:inline-flex; align-items:center; gap:6px; background:var(--ok-soft); color:var(--ok);
+  padding:6px 12px; border-radius:999px; font-size:12.5px; font-weight:700; white-space:nowrap }
+.badge .dot{ width:7px; height:7px; border-radius:50%; background:var(--ok) }
+
+label{ display:block; font-size:12.5px; color:var(--muted); margin-bottom:6px; font-weight:600 }
+input, select{
+  width:100%; background:var(--panel2); border:1px solid var(--border); color:var(--text);
+  border-radius:10px; padding:11px 12px; font-size:14px; font-family:inherit;
+}
+input:focus, select:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft) }
+.field{ margin-bottom:14px }
+.row{ display:flex; gap:14px; flex-wrap:wrap }
+.row > .field{ flex:1; min-width:160px }
+
+button{
+  border:none; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:700;
+  cursor:pointer; font-family:inherit;
+}
+button.primary{ background:var(--accent); color:#0b1826 }
+button.primary:hover{ background:var(--accent-hover) }
+button.primary:disabled{ opacity:.55; cursor:not-allowed }
+button.ghost{ background:transparent; border:1px solid var(--border); color:var(--text) }
+button.ghost:hover{ border-color:var(--accent); color:var(--accent) }
+button.small{ padding:7px 12px; font-size:12.5px; border-radius:8px }
+button.inline-link{ background:none; border:none; padding:0; color:var(--accent); font:inherit; font-weight:600; text-decoration:underline; cursor:pointer }
+
+.banner{ border-radius:10px; padding:12px 14px; font-size:13.5px; margin-top:10px; border:1px solid transparent }
+.banner.bad{ background:var(--danger-soft); border-color:#7a3936; color:var(--danger) }
+.banner.good{ background:var(--ok-soft); border-color:#2c5c3f; color:var(--ok) }
+.hidden{ display:none !important }
+
+.tabs{ display:flex; gap:8px; margin-bottom:16px }
+.tabbtn{ flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:var(--panel2); color:var(--muted); font-weight:700; cursor:pointer; font-size:13.5px }
+.tabbtn.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent) }
+
+table{ width:100%; border-collapse:collapse; font-size:13.5px }
+th, td{ text-align:left; padding:10px 8px; border-bottom:1px solid var(--border) }
+th{ color:var(--muted); font-weight:700; font-size:12px; text-transform:none }
+.pill{ display:inline-flex; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:700 }
+.pill.pend{ background:var(--accent2-soft); color:var(--accent2) }
+.pill.pag{ background:var(--ok-soft); color:var(--ok) }
+.pill.rep{ background:var(--accent-soft); color:var(--accent) }
+.kpis{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:6px }
+.kpi{ flex:1; min-width:130px; background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:14px }
+.kpi .label{ font-size:12px; color:var(--muted); margin-bottom:4px }
+.kpi .value{ font-size:19px; font-weight:800; font-family:var(--mono) }
+.topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px }
+.who{ font-size:13px; color:var(--muted) }
+.who b{ color:var(--text) }
+.section-title{ font-size:14px; font-weight:800; margin:0 0 12px }
+.empty{ color:var(--muted-2); font-size:13.5px; padding:16px 0; text-align:center }
+.config-box{ background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px }
+.config-box .row{ align-items:flex-end }
+small.help{ color:var(--muted-2); font-size:11.5px }
+
+.table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -4px; padding:0 4px }
+.table-scroll table{ min-width:640px }
+
+@media (max-width: 640px){
+  body{ padding:14px 10px 50px }
+  h1{ font-size:17px }
+  .card{ padding:14px }
+  .hero{ padding:14px 16px; flex-direction:column; align-items:flex-start }
+  .hero h2{ font-size:15px }
+  .row{ gap:10px }
+  .row > .field{ min-width:100% }
+  input, select{ font-size:16px; padding:12px } /* 16px evita el zoom automático en iOS */
+  button{ font-size:15px; padding:12px 16px; width:100% }
+  button.small, button.ghost.small{ width:auto; padding:9px 14px }
+  .tabs{ flex-direction:column }
+  .kpis{ gap:8px }
+  .kpi{ min-width:calc(50% - 8px); padding:12px }
+  .kpi .value{ font-size:16px }
+  .topbar{ flex-direction:column; align-items:flex-start; gap:10px }
+  .topbar button{ width:auto }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>📦 Portal de Bodega — Cargas y Pagos</h1>
+  <p class="subtitle">
+    <button type="button" class="inline-link" id="btnAbrirConfig">Soy del equipo técnico y necesito cambiar la URL del backend</button>
+  </p>
+
+  <div id="configBox" class="config-box hidden">
+    <div class="row">
+      <div class="field" style="flex:3">
+        <label>URL del backend (Apps Script, termina en /exec)</label>
+        <input id="inputBackendUrl" placeholder="https://script.google.com/macros/s/AAAA.../exec">
+      </div>
+      <div class="field" style="flex:0 0 auto">
+        <button class="primary" id="btnGuardarConfig">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-icon">🚚</div>
+      <div>
+        <h2>Registro de cargas por municipio</h2>
+        <p>Bodega carga, confirma el pago y cada municipio ve lo suyo.</p>
+      </div>
+    </div>
+    <span class="badge"><span class="dot"></span> Sistema operativo</span>
+  </div>
+
+  <!-- ===================== LOGIN ===================== -->
+  <div id="viewLogin" class="card">
+    <div class="tabs">
+      <button type="button" class="tabbtn active" id="tabBodega">Soy de bodega</button>
+      <button type="button" class="tabbtn" id="tabMunicipio">Soy de un municipio</button>
+      <button type="button" class="tabbtn" id="tabAdmin">Soy administrador</button>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Cédula</label>
+        <input id="loginCedula" inputmode="numeric" pattern="[0-9]*" placeholder="Ingresa tu número de cédula">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input id="loginPassword" type="password" placeholder="Ingresa tu contraseña">
+      </div>
+    </div>
+    <button class="primary" id="btnLogin">Ingresar</button>
+    <div id="loginMsg" class="banner bad hidden"></div>
+  </div>
+
+  <!-- ===================== VISTA BODEGA ===================== -->
+  <div id="viewBodega" class="hidden">
+    <div class="topbar">
+      <div class="who">Conectado como <b id="bodegaNombre"></b> (bodega)</div>
+      <button class="ghost small" id="btnLogoutBodega">Cerrar sesión</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Registrar nueva carga</div>
+      <div class="row">
+        <div class="field">
+          <label>Número de cajas</label>
+          <input id="carNumCajas" type="number" min="1" placeholder="Ej: 5">
+        </div>
+        <div class="field">
+          <label>Valor por caja</label>
+          <input id="carValorCaja" type="number" min="1" placeholder="Ej: 15000">
+        </div>
+        <div class="field">
+          <label>Destino (municipio)</label>
+          <select id="carMunicipio"><option value="">Selecciona...</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Responsable</label>
+          <input id="carResponsable" disabled>
+        </div>
+        <div class="field">
+          <label>Valor total (automático)</label>
+          <input id="carValorTotal" disabled>
+        </div>
+        <div class="field">
+          <label>Foto de las cajas (opcional)</label>
+          <input id="carFoto" type="file" accept="image/*">
+          <small class="help">Si no puedes tomar la foto, no hay problema — puedes guardar igual.</small>
+        </div>
+      </div>
+      <button class="primary" id="btnGuardarCarga">Guardar carga</button>
+      <div id="cargaMsg" class="banner hidden"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Corte del mes</div>
+      <div class="kpis" id="corteBodegaKpis"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Mis cargas</div>
+      <div class="row" style="align-items:flex-end">
+        <div class="field" style="max-width:220px">
+          <label>Filtrar por mes</label>
+          <input id="filtroMesBodega" type="month">
+        </div>
+        <div class="field" style="max-width:220px">
+          <label>Filtrar por municipio</label>
+          <select id="filtroMunicipioBodega"><option value="">Todos</option></select>
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <button class="ghost small" id="btnRefrescarBodega">Actualizar</button>
+        </div>
+      </div>
+      <div id="listaCargasBodega"></div>
+    </div>
+  </div>
+
+  <!-- ===================== VISTA MUNICIPIO ===================== -->
+  <div id="viewMunicipio" class="hidden">
+    <div class="topbar">
+      <div class="who">Conectado como <b id="municipioNombre"></b></div>
+      <button class="ghost small" id="btnLogoutMunicipio">Cerrar sesión</button>
+    </div>
+
+    <div id="avisoNuevaCarga" class="banner good hidden" style="margin-bottom:16px"></div>
+
+    <div class="card">
+      <div class="section-title">Resumen del mes</div>
+      <div class="kpis" id="resumenMunicipioKpis"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Corte mensual</div>
+      <div class="kpis" id="corteMunicipioKpis"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Historial de cargas</div>
+      <div class="row" style="align-items:flex-end">
+        <div class="field" style="max-width:220px">
+          <label>Filtrar por mes</label>
+          <input id="filtroMesMunicipio" type="month">
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <button class="ghost small" id="btnRefrescarMunicipio">Actualizar</button>
+        </div>
+      </div>
+      <div id="listaCargasMunicipio"></div>
+    </div>
+  </div>
+
+  <!-- ===================== VISTA ADMINISTRADOR ===================== -->
+  <div id="viewAdmin" class="hidden">
+    <div class="topbar">
+      <div class="who">Conectado como <b id="adminNombre"></b> (administrador)</div>
+      <button class="ghost small" id="btnLogoutAdmin">Cerrar sesión</button>
+    </div>
+
+    <div id="avisoNuevaCargaAdmin" class="banner good hidden" style="margin-bottom:16px"></div>
+
+    <div class="card">
+      <div class="section-title">Corte general del mes</div>
+      <div class="kpis" id="corteAdminKpis"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Todas las cargas</div>
+      <div class="row" style="align-items:flex-end">
+        <div class="field" style="max-width:220px">
+          <label>Filtrar por mes</label>
+          <input id="filtroMesAdmin" type="month">
+        </div>
+        <div class="field" style="max-width:220px">
+          <label>Filtrar por municipio</label>
+          <select id="filtroMunicipioAdmin"><option value="">Todos</option></select>
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <button class="ghost small" id="btnRefrescarAdmin">Actualizar</button>
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <button class="ghost small" id="btnDescargarExcel">⬇ Descargar Excel</button>
+        </div>
+      </div>
+      <div class="kpis" id="resumenAdminKpis" style="margin-bottom:14px"></div>
+      <div id="barraAprobarMasivo" class="hidden" style="margin-bottom:12px">
+        <button class="primary small" id="btnAprobarSeleccionadas">Aprobar seleccionadas (<span id="contadorSeleccionadas">0</span>)</button>
+      </div>
+      <div id="listaCargasAdmin"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// Configuración de la URL del backend. Se usa la URL por defecto
+// de abajo (la /exec real de este proyecto) para que cualquier
+// persona que abra el enlace, desde cualquier dispositivo, entre
+// directo sin tener que configurar nada. El enlace "Soy del
+// equipo técnico" sigue disponible solo por si algún día hay que
+// apuntar a otra URL (por ejemplo si se crea un proyecto nuevo).
+// ============================================================
+const LS_KEY_BACKEND = 'bodega_backend_url';
+const LS_KEY_SESSION = 'bodega_session';
+const DEFAULT_BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxQ-7d-6uSe3DPtfQp2HwYgTpxIs23Q9VNQ8ROxYd-ywOyUkhRxUND2Lsw7QiaWoYke/exec';
+
+function getBackendUrl(){ return DEFAULT_BACKEND_URL; }
+function setBackendUrl(u){ localStorage.setItem(LS_KEY_BACKEND, u); }
+
+// PIN simple para evitar que cualquiera, sin querer o por curiosidad,
+// abra el campo de la URL del backend y lo dañe para todo el mundo.
+// No es una seguridad real (está en el código de la página), pero
+// evita accidentes y curiosidad casual del día a día.
+const TECH_PIN = '2468';
+
+document.getElementById('btnAbrirConfig').addEventListener('click', ()=>{
+  const box = document.getElementById('configBox');
+  if (box.classList.contains('hidden')){
+    const intento = prompt('Esta sección es solo para el equipo técnico. Escribe el código:');
+    if (intento === null) return; // canceló
+    if (intento.trim() !== TECH_PIN){
+      alert('Código incorrecto.');
+      return;
+    }
+  }
+  box.classList.toggle('hidden');
+  document.getElementById('inputBackendUrl').value = getBackendUrl();
+});
+document.getElementById('inputBackendUrl').addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter') document.getElementById('btnGuardarConfig').click();
+});
+document.getElementById('btnGuardarConfig').addEventListener('click', ()=>{
+  const url = document.getElementById('inputBackendUrl').value.trim();
+  if (!url){ alert('Pega la URL del backend.'); return; }
+  setBackendUrl(url);
+  document.getElementById('configBox').classList.add('hidden');
+  alert('URL guardada.');
+});
+
+async function apiCall(action, payload){
+  const url = getBackendUrl();
+  if (!url) throw new Error('Falta configurar la URL del backend (Apps Script).');
+  let ultimoError;
+  for (let intento = 0; intento < 2; intento++){
+    const controller = new AbortController();
+    const timeoutId = setTimeout(()=>controller.abort(), 60000);
+    try{
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify(Object.assign({action}, payload)),
+        signal: controller.signal,
+        cache:'no-store'
+      });
+      const texto = await res.text();
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error(`El backend respondió con HTTP ${res.status}.`);
+      try { return JSON.parse(texto); }
+      catch (err) { throw new Error('El backend respondió algo que no es JSON. Revisa la implementación de Apps Script.'); }
+    }catch(err){
+      clearTimeout(timeoutId);
+      ultimoError = err;
+      if (intento === 0) await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  if (ultimoError && ultimoError.name === 'AbortError'){
+    throw new Error('El backend no respondió a tiempo. La URL es correcta, pero la implementación de Apps Script está lenta o necesita autorización.');
+  }
+  throw new Error(ultimoError ? ultimoError.message : 'No se pudo conectar con el backend.');
+}
+
+// ============================================================
+// Formato de moneda
+// ============================================================
+function formatoCOP(n){
+  return '$' + Math.round(Number(n)||0).toLocaleString('es-CO');
+}
+
+// ============================================================
+// LOGIN
+// ============================================================
+let rolActivo = 'bodega';
+
+document.getElementById('tabBodega').addEventListener('click', ()=>{
+  rolActivo = 'bodega';
+  document.getElementById('tabBodega').classList.add('active');
+  document.getElementById('tabMunicipio').classList.remove('active');
+  document.getElementById('tabAdmin').classList.remove('active');
+});
+document.getElementById('tabMunicipio').addEventListener('click', ()=>{
+  rolActivo = 'municipio';
+  document.getElementById('tabMunicipio').classList.add('active');
+  document.getElementById('tabBodega').classList.remove('active');
+  document.getElementById('tabAdmin').classList.remove('active');
+});
+document.getElementById('tabAdmin').addEventListener('click', ()=>{
+  rolActivo = 'admin';
+  document.getElementById('tabAdmin').classList.add('active');
+  document.getElementById('tabBodega').classList.remove('active');
+  document.getElementById('tabMunicipio').classList.remove('active');
+});
+
+document.getElementById('loginCedula').addEventListener('input', (e)=>{
+  const limpio = e.target.value.replace(/\D/g, '');
+  if (limpio !== e.target.value) e.target.value = limpio;
+});
+
+document.getElementById('loginCedula').addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter') document.getElementById('btnLogin').click();
+});
+document.getElementById('loginPassword').addEventListener('keydown', (e)=>{
+  if (e.key === 'Enter') document.getElementById('btnLogin').click();
+});
+
+document.getElementById('btnLogin').addEventListener('click', async ()=>{
+  const cedula = document.getElementById('loginCedula').value.replace(/\D/g,'').trim();
+  const password = document.getElementById('loginPassword').value;
+  const msg = document.getElementById('loginMsg');
+  msg.classList.add('hidden');
+  if (!cedula || !password){
+    msg.textContent = 'Escribe tu número de cédula y tu contraseña.';
+    msg.classList.remove('hidden');
+    return;
+  }
+  const btn = document.getElementById('btnLogin');
+  btn.disabled = true; btn.textContent = 'Ingresando...';
+  try{
+    const r = await apiCall('login', { rol: rolActivo, cedula, password });
+    if (!r.ok){
+      msg.textContent = r.error || 'No se pudo iniciar sesión.';
+      msg.classList.remove('hidden');
+      return;
+    }
+    localStorage.setItem(LS_KEY_SESSION, JSON.stringify(r));
+    aplicarSesion(r);
+  }catch(err){
+    msg.textContent = err.message;
+    msg.classList.remove('hidden');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Ingresar';
+  }
+});
+
+function aplicarSesion(sesion){
+  document.getElementById('viewLogin').classList.add('hidden');
+  if (sesion.rol === 'bodega'){
+    document.getElementById('viewBodega').classList.remove('hidden');
+    document.getElementById('bodegaNombre').textContent = sesion.nombre;
+    document.getElementById('carResponsable').value = sesion.nombre;
+    cargarMunicipiosEnSelect();
+    cargarMunicipiosEnSelectFiltroBodega();
+    refrescarBodega();
+  } else if (sesion.rol === 'admin'){
+    document.getElementById('viewAdmin').classList.remove('hidden');
+    document.getElementById('adminNombre').textContent = sesion.nombre;
+    cargarMunicipiosEnSelectAdmin();
+    refrescarAdmin();
+  } else {
+    document.getElementById('viewMunicipio').classList.remove('hidden');
+    document.getElementById('municipioNombre').textContent = sesion.nombre ? `${sesion.nombre} (${sesion.municipio})` : sesion.municipio;
+    refrescarMunicipio();
+  }
+}
+
+function cerrarSesion(){
+  localStorage.removeItem(LS_KEY_SESSION);
+  document.getElementById('viewBodega').classList.add('hidden');
+  document.getElementById('viewMunicipio').classList.add('hidden');
+  document.getElementById('viewAdmin').classList.add('hidden');
+  document.getElementById('viewLogin').classList.remove('hidden');
+  document.getElementById('loginCedula').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginMsg').classList.add('hidden');
+}
+document.getElementById('btnLogoutBodega').addEventListener('click', cerrarSesion);
+document.getElementById('btnLogoutMunicipio').addEventListener('click', cerrarSesion);
+document.getElementById('btnLogoutAdmin').addEventListener('click', cerrarSesion);
+
+// Al cargar la página, si ya había sesión guardada, entra directo.
+(function initSesion(){
+  const raw = localStorage.getItem(LS_KEY_SESSION);
+  if (raw){
+    try{ aplicarSesion(JSON.parse(raw)); }catch(e){}
+  }
+})();
+
+// ============================================================
+// BODEGA
+// ============================================================
+function sesionActual(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY_SESSION)); }catch(e){ return null; }
+}
+
+async function cargarMunicipiosEnSelect(){
+  try{
+    const r = await apiCall('listarMunicipios', {});
+    const select = document.getElementById('carMunicipio');
+    if (r.ok){
+      r.municipios.forEach(m=>{
+        const opt = document.createElement('option');
+        opt.value = m; opt.textContent = m;
+        select.appendChild(opt);
+      });
+    }
+  }catch(e){ /* si falla, el select queda solo con "Selecciona..." */ }
+}
+
+function actualizarValorTotal(){
+  const n = Number(document.getElementById('carNumCajas').value)||0;
+  const v = Number(document.getElementById('carValorCaja').value)||0;
+  document.getElementById('carValorTotal').value = formatoCOP(n*v);
+}
+document.getElementById('carNumCajas').addEventListener('input', actualizarValorTotal);
+document.getElementById('carValorCaja').addEventListener('input', actualizarValorTotal);
+
+function leerArchivoComoBase64(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = ()=>resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('btnGuardarCarga').addEventListener('click', async ()=>{
+  const sesion = sesionActual();
+  const msg = document.getElementById('cargaMsg');
+  msg.classList.add('hidden');
+
+  const numCajas = Number(document.getElementById('carNumCajas').value);
+  const valorPorCaja = Number(document.getElementById('carValorCaja').value);
+  const municipio = document.getElementById('carMunicipio').value;
+  const fotoInput = document.getElementById('carFoto');
+
+  const payload = { cedula: sesion.cedula, numCajas, valorPorCaja, municipio };
+
+  const btn = document.getElementById('btnGuardarCarga');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try{
+    if (fotoInput.files && fotoInput.files[0]){
+      payload.fotoBase64 = await leerArchivoComoBase64(fotoInput.files[0]);
+      payload.fotoMimeType = fotoInput.files[0].type;
+    }
+    const r = await apiCall('crearCarga', payload);
+    msg.classList.remove('bad'); msg.classList.add(r.ok ? 'good' : 'bad');
+    msg.textContent = r.ok
+      ? `Carga guardada correctamente el ${r.fecha} a las ${r.hora}. Total: ${formatoCOP(r.valorTotal)}`
+      : (r.error || 'No se pudo guardar la carga.');
+    msg.classList.remove('hidden');
+    if (r.ok){
+      document.getElementById('carNumCajas').value = '';
+      document.getElementById('carValorCaja').value = '';
+      document.getElementById('carMunicipio').value = '';
+      document.getElementById('carValorTotal').value = '';
+      fotoInput.value = '';
+      refrescarBodega();
+    }
+  }catch(err){
+    msg.classList.remove('good'); msg.classList.add('bad');
+    msg.textContent = err.message;
+    msg.classList.remove('hidden');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Guardar carga';
+  }
+});
+
+async function cargarMunicipiosEnSelectFiltroBodega(){
+  try{
+    const r = await apiCall('listarMunicipios', {});
+    const select = document.getElementById('filtroMunicipioBodega');
+    if (r.ok){
+      r.municipios.forEach(m=>{
+        const opt = document.createElement('option');
+        opt.value = m; opt.textContent = m;
+        select.appendChild(opt);
+      });
+    }
+  }catch(e){ /* si falla, el select queda solo con "Todos" */ }
+}
+
+async function refrescarBodega(){
+  const sesion = sesionActual();
+  const mes = document.getElementById('filtroMesBodega').value;
+  const municipio = document.getElementById('filtroMunicipioBodega').value;
+
+  const panel = await apiCall('panelBodega', { cedula: sesion.cedula, mes, municipio });
+  if (!panel.ok){
+    document.getElementById('listaCargasBodega').innerHTML = `<div class="empty">${panel.error||'Error al cargar.'}</div>`;
+    return;
+  }
+  pintarCorteKpis('corteBodegaKpis', panel.corte);
+  pintarListaCargas('listaCargasBodega', panel.cargas, 'bodega');
+}
+document.getElementById('filtroMunicipioBodega').addEventListener('change', refrescarBodega);
+document.getElementById('btnRefrescarBodega').addEventListener('click', refrescarBodega);
+document.getElementById('filtroMesBodega').addEventListener('change', refrescarBodega);
+
+function pintarCorteKpis(contenedorId, corteRes){
+  const el = document.getElementById(contenedorId);
+  if (!corteRes.ok){ el.innerHTML = '<div class="empty">No se pudo cargar el corte.</div>'; return; }
+  el.innerHTML = `
+    <div class="kpi"><div class="label">Cajas pagadas</div><div class="value">${corteRes.cantidadCajasPagadas}</div></div>
+    <div class="kpi"><div class="label">Valor unitario prom.</div><div class="value">${formatoCOP(corteRes.valorUnitarioPromedio)}</div></div>
+    <div class="kpi"><div class="label">Monto acumulado</div><div class="value">${formatoCOP(corteRes.montoAcumulado)}</div></div>
+    <div class="kpi"><div class="label">Pendiente por pagar</div><div class="value">${formatoCOP(corteRes.montoPendiente)}</div></div>
+  `;
+}
+
+function textoPill(estado){
+  if (estado === 'Pagado') return { clase: 'pag', texto: 'Pagado' };
+  if (estado === 'Reportado') return { clase: 'rep', texto: 'En revisión' };
+  return { clase: 'pend', texto: 'Pendiente' };
+}
+
+function pintarListaCargas(contenedorId, cargasRes, modo){
+  const esBodega = modo === 'bodega';
+  const esMunicipio = modo === 'municipio';
+  const el = document.getElementById(contenedorId);
+  if (!cargasRes.ok){ el.innerHTML = `<div class="empty">${cargasRes.error||'Error al cargar.'}</div>`; return; }
+  if (!cargasRes.cargas.length){ el.innerHTML = '<div class="empty">No hay cargas registradas todavía.</div>'; return; }
+
+  let filas = cargasRes.cargas.map(c=>{
+    const pill = textoPill(c.estado);
+    const mostrarBotonPagar = esMunicipio && c.estado === 'Pendiente';
+    return `
+    <tr>
+      <td>${c.fecha}${c.horaCreado ? ' <span style="color:var(--muted-2)">' + c.horaCreado + '</span>' : ''}</td>
+      <td>${esBodega ? c.municipio : c.responsableNombre}</td>
+      <td>${c.numCajas}</td>
+      <td>${formatoCOP(c.valorPorCaja)}</td>
+      <td>${formatoCOP(c.valorTotal)}</td>
+      <td><span class="pill ${pill.clase}">${pill.texto}</span></td>
+      <td>${c.fotoUrl ? `<a href="${c.fotoUrl}" target="_blank" rel="noopener" class="inline-link">Ver foto</a>` : '—'}</td>
+      ${esMunicipio ? `<td>${mostrarBotonPagar ? `<button class="ghost small btn-pagar" data-id="${c.id}">Ya pagué</button>` : '—'}</td>` : ''}
+    </tr>
+  `;}).join('');
+
+  el.innerHTML = `
+    <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th>Fecha</th><th>${esBodega?'Municipio':'Responsable'}</th><th>Cajas</th><th>Valor/caja</th><th>Total</th><th>Estado</th><th>Foto</th>
+        ${esMunicipio?'<th></th>':''}
+      </tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+    </div>
+  `;
+
+  if (esMunicipio){
+    el.querySelectorAll('.btn-pagar').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if (!confirm('¿Confirmas que ya realizaste el pago de esta carga? Quedará pendiente de aprobación del administrador.')) return;
+        btn.disabled = true; btn.textContent = 'Enviando...';
+        const sesion = sesionActual();
+        try{
+          const r = await apiCall('reportarPagoMunicipio', { id: btn.getAttribute('data-id'), cedula: sesion.cedula });
+          if (!r.ok){ alert(r.error||'No se pudo reportar el pago.'); btn.disabled=false; btn.textContent='Ya pagué'; return; }
+          refrescarMunicipio();
+        }catch(err){ alert(err.message); btn.disabled=false; btn.textContent='Ya pagué'; }
+      });
+    });
+  }
+}
+
+// ============================================================
+// MUNICIPIO
+// ============================================================
+async function refrescarMunicipio(){
+  const sesion = sesionActual();
+  const mes = document.getElementById('filtroMesMunicipio').value;
+
+  const panel = await apiCall('panelMunicipio', { cedula: sesion.cedula, mes });
+  const kpiEl = document.getElementById('resumenMunicipioKpis');
+  const resumenRes = panel.ok ? panel.resumen : { ok:false, error: panel.error };
+
+  if (resumenRes.ok){
+    kpiEl.innerHTML = `
+      <div class="kpi"><div class="label">Total pendiente</div><div class="value">${formatoCOP(resumenRes.totalPendiente)}</div></div>
+      <div class="kpi"><div class="label">Total pagado</div><div class="value">${formatoCOP(resumenRes.totalPagado)}</div></div>
+    `;
+    pintarListaCargas('listaCargasMunicipio', resumenRes, 'municipio');
+    revisarCargasNuevas('municipio_' + sesion.cedula, 'avisoNuevaCarga', resumenRes.cargas);
+  } else {
+    kpiEl.innerHTML = `<div class="empty">${resumenRes.error||'Error al cargar.'}</div>`;
+  }
+
+  if (panel.ok) pintarCorteKpis('corteMunicipioKpis', panel.corte);
+}
+
+// Compara la carga más reciente contra la última que ese municipio ya
+// vio (guardado en su propio navegador) para mostrarle un aviso de
+// "carga nueva" cuando corresponda. No es una notificación push real,
+// pero avisa apenas la persona abre la app.
+function revisarCargasNuevas(claveSufijo, elementoId, cargas){
+  const aviso = document.getElementById(elementoId);
+  if (!cargas || !cargas.length){ aviso.classList.add('hidden'); return; }
+
+  const claveVisto = 'bodega_ultima_carga_vista_' + claveSufijo;
+  const idMasReciente = cargas.reduce((max, c) => c.id > max ? c.id : max, cargas[0].id);
+  const ultimoVisto = localStorage.getItem(claveVisto);
+
+  if (ultimoVisto && idMasReciente > ultimoVisto){
+    const nuevas = cargas.filter(c => c.id > ultimoVisto);
+    aviso.textContent = `🔔 Tienes ${nuevas.length} carga${nuevas.length>1?'s':''} nueva${nuevas.length>1?'s':''} registrada${nuevas.length>1?'s':''} desde tu última visita.`;
+    aviso.classList.remove('hidden');
+  } else {
+    aviso.classList.add('hidden');
+  }
+  localStorage.setItem(claveVisto, idMasReciente);
+}
+document.getElementById('btnRefrescarMunicipio').addEventListener('click', refrescarMunicipio);
+document.getElementById('filtroMesMunicipio').addEventListener('change', refrescarMunicipio);
+
+// ============================================================
+// ADMINISTRADOR
+// ============================================================
+async function cargarMunicipiosEnSelectAdmin(){
+  try{
+    const r = await apiCall('listarMunicipios', {});
+    const select = document.getElementById('filtroMunicipioAdmin');
+    if (r.ok){
+      r.municipios.forEach(m=>{
+        const opt = document.createElement('option');
+        opt.value = m; opt.textContent = m;
+        select.appendChild(opt);
+      });
+    }
+  }catch(e){ /* si falla, el select queda solo con "Todos" */ }
+}
+
+async function refrescarAdmin(){
+  const sesion = sesionActual();
+  const mes = document.getElementById('filtroMesAdmin').value;
+  const municipio = document.getElementById('filtroMunicipioAdmin').value;
+
+  const panel = await apiCall('panelAdmin', { cedula: sesion.cedula, mes, municipio });
+  const kpiEl = document.getElementById('resumenAdminKpis');
+  const listaRes = panel.ok ? panel.lista : { ok:false, error: panel.error };
+
+  if (listaRes.ok){
+    kpiEl.innerHTML = `
+      <div class="kpi"><div class="label">Total pendiente</div><div class="value">${formatoCOP(listaRes.totalPendiente)}</div></div>
+      <div class="kpi"><div class="label">Total pagado</div><div class="value">${formatoCOP(listaRes.totalPagado)}</div></div>
+    `;
+    pintarListaCargasAdmin(listaRes);
+    revisarCargasNuevas('admin_' + sesion.cedula, 'avisoNuevaCargaAdmin', listaRes.cargas.filter(c => c.estado === 'Pendiente'));
+  } else {
+    kpiEl.innerHTML = `<div class="empty">${listaRes.error||'Error al cargar.'}</div>`;
+    document.getElementById('listaCargasAdmin').innerHTML = '';
+  }
+
+  if (panel.ok) pintarCorteKpis('corteAdminKpis', panel.corte);
+}
+document.getElementById('btnRefrescarAdmin').addEventListener('click', refrescarAdmin);
+document.getElementById('filtroMesAdmin').addEventListener('change', refrescarAdmin);
+document.getElementById('filtroMunicipioAdmin').addEventListener('change', refrescarAdmin);
+
+function pintarListaCargasAdmin(cargasRes){
+  const el = document.getElementById('listaCargasAdmin');
+  if (!cargasRes.cargas.length){ el.innerHTML = '<div class="empty">No hay cargas registradas todavía.</div>'; return; }
+
+  let filas = cargasRes.cargas.map(c=>{
+    const pill = textoPill(c.estado);
+    const sePuedeAprobar = c.estado !== 'Pagado';
+    return `
+    <tr data-row="${c.id}">
+      <td>${sePuedeAprobar ? `<input type="checkbox" class="chk-carga" data-id="${c.id}">` : ''}</td>
+      <td>${c.fecha}${c.horaCreado ? ' <span style="color:var(--muted-2)">' + c.horaCreado + '</span>' : ''}</td>
+      <td>${c.responsableNombre}</td>
+      <td>${c.municipio}</td>
+      <td>${c.numCajas}</td>
+      <td class="celda-valor-caja">
+        <span class="valor-texto">${formatoCOP(c.valorPorCaja)}</span>
+        <button type="button" class="ghost small btn-editar-valor" data-id="${c.id}" data-valor="${c.valorPorCaja}">Editar</button>
+      </td>
+      <td class="celda-total">${formatoCOP(c.valorTotal)}</td>
+      <td><span class="pill ${pill.clase}">${pill.texto}</span></td>
+      <td>${c.fotoUrl ? `<a href="${c.fotoUrl}" target="_blank" rel="noopener" class="inline-link">Ver foto</a>` : '—'}</td>
+      <td>${sePuedeAprobar ? `<button class="ghost small btn-confirmar-admin" data-id="${c.id}">Aprobar</button>` : '—'}</td>
+    </tr>
+  `;}).join('');
+
+  el.innerHTML = `
+    <div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th><input type="checkbox" id="chkSeleccionarTodas" aria-label="Seleccionar todas las cargas aprobables"></th><th>Fecha</th><th>Responsable</th><th>Municipio</th><th>Cajas</th><th>Valor/caja</th><th>Total</th><th>Estado</th><th>Foto</th><th></th>
+      </tr></thead>
+      <tbody>${filas}</tbody>
+    </table>
+    </div>
+  `;
+
+  function actualizarBarraMasivo(){
+    const checks = Array.from(el.querySelectorAll('.chk-carga'));
+    const seleccionadas = checks.filter(chk=>chk.checked).length;
+    const chkTodas = el.querySelector('#chkSeleccionarTodas');
+    if (chkTodas){
+      chkTodas.checked = checks.length > 0 && seleccionadas === checks.length;
+      chkTodas.indeterminate = seleccionadas > 0 && seleccionadas < checks.length;
+    }
+    document.getElementById('contadorSeleccionadas').textContent = seleccionadas;
+    document.getElementById('barraAprobarMasivo').classList.toggle('hidden', seleccionadas === 0);
+  }
+
+  el.querySelectorAll('.chk-carga').forEach(chk=>{
+    chk.addEventListener('change', actualizarBarraMasivo);
+  });
+
+  el.querySelector('#chkSeleccionarTodas').addEventListener('change', (event)=>{
+    el.querySelectorAll('.chk-carga').forEach(chk=>{ chk.checked = event.target.checked; });
+    actualizarBarraMasivo();
+  });
+
+  el.querySelectorAll('.btn-confirmar-admin').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      btn.disabled = true; btn.textContent = 'Confirmando...';
+      const sesion = sesionActual();
+      try{
+        const r = await apiCall('confirmarPagoAdmin', { id: btn.getAttribute('data-id'), cedula: sesion.cedula });
+        if (!r.ok){ alert(r.error||'No se pudo confirmar.'); btn.disabled=false; btn.textContent='Aprobar'; return; }
+        refrescarAdmin();
+      }catch(err){
+        alert(err.message); btn.disabled=false; btn.textContent='Aprobar';
+      }
+    });
+  });
+
+  el.querySelectorAll('.btn-editar-valor').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const celda = btn.closest('.celda-valor-caja');
+      const idCarga = btn.getAttribute('data-id');
+      const valorActual = btn.getAttribute('data-valor');
+      celda.innerHTML = `
+        <input type="number" min="1" value="${valorActual}" style="width:100px;display:inline-block" class="input-nuevo-valor">
+        <button type="button" class="primary small btn-guardar-valor" data-id="${idCarga}">Guardar</button>
+      `;
+      celda.querySelector('.btn-guardar-valor').addEventListener('click', async ()=>{
+        const nuevoValor = Number(celda.querySelector('.input-nuevo-valor').value);
+        if (!nuevoValor || nuevoValor <= 0){ alert('El valor debe ser mayor a cero.'); return; }
+        const sesion = sesionActual();
+        try{
+          const r = await apiCall('editarValorCaja', { id: idCarga, valorPorCaja: nuevoValor, cedula: sesion.cedula });
+          if (!r.ok){ alert(r.error||'No se pudo actualizar.'); return; }
+          refrescarAdmin();
+        }catch(err){ alert(err.message); }
+      });
+    });
+  });
+}
+
+document.getElementById('btnAprobarSeleccionadas').addEventListener('click', async ()=>{
+  const ids = Array.from(document.querySelectorAll('.chk-carga:checked')).map(chk => chk.getAttribute('data-id'));
+  if (!ids.length) return;
+  if (!confirm(`¿Aprobar el pago de ${ids.length} carga(s) seleccionada(s)?`)) return;
+
+  const btn = document.getElementById('btnAprobarSeleccionadas');
+  btn.disabled = true;
+  const textoOriginal = btn.innerHTML;
+  btn.textContent = 'Aprobando...';
+  const sesion = sesionActual();
+  try{
+    const r = await apiCall('confirmarPagoAdminMasivo', { ids, cedula: sesion.cedula });
+    if (!r.ok){ alert(r.error||'No se pudo completar la aprobación masiva.'); }
+    else if (r.errores && r.errores.length){
+      alert(`Se aprobaron ${r.confirmadas} de ${r.total}. Algunas fallaron (probablemente ya estaban aprobadas).`);
+    }
+    document.getElementById('barraAprobarMasivo').classList.add('hidden');
+    refrescarAdmin();
+  }catch(err){ alert(err.message); }
+  finally{ btn.disabled = false; btn.innerHTML = textoOriginal; }
+});
+
+// ============================================================
+// DESCARGAR REPORTE EN EXCEL
+// ============================================================
+document.getElementById('btnDescargarExcel').addEventListener('click', async ()=>{
+  const sesion = sesionActual();
+  const mes = document.getElementById('filtroMesAdmin').value;
+  const municipio = document.getElementById('filtroMunicipioAdmin').value;
+
+  const btn = document.getElementById('btnDescargarExcel');
+  btn.disabled = true; btn.textContent = 'Generando...';
+  try{
+    const r = await apiCall('generarReporteExcel', { cedula: sesion.cedula, mes, municipio });
+    if (!r.ok){ alert(r.error||'No se pudo generar el reporte.'); return; }
+
+    const link = document.createElement('a');
+    link.href = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + r.base64;
+    link.download = r.nombreArchivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }catch(err){ alert(err.message); }
+  finally{ btn.disabled = false; btn.textContent = '⬇ Descargar Excel'; }
+});
+
+
+</script>
+</body>
+</html>
