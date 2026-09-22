@@ -226,8 +226,15 @@ small.help{ color:var(--muted-2); font-size:11.5px }
           <input id="filtroMesBodega" type="month">
         </div>
         <div class="field" style="max-width:220px">
+          <label>Filtrar por día</label>
+          <input id="filtroDiaBodega" type="date">
+        </div>
+        <div class="field" style="max-width:220px">
           <label>Filtrar por municipio</label>
           <select id="filtroMunicipioBodega"><option value="">Todos</option></select>
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <button class="ghost small" id="btnLimpiarFiltroBodega">Limpiar filtros</button>
         </div>
         <div class="field" style="flex:0 0 auto">
           <button class="ghost small" id="btnRefrescarBodega">Actualizar</button>
@@ -263,6 +270,13 @@ small.help{ color:var(--muted-2); font-size:11.5px }
           <label>Filtrar por mes</label>
           <input id="filtroMesMunicipio" type="month">
         </div>
+        <div class="field" style="max-width:220px">
+          <label>Filtrar por día</label>
+          <input id="filtroDiaMunicipio" type="date">
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <button class="ghost small" id="btnLimpiarFiltroMunicipio">Limpiar filtros</button>
+        </div>
         <div class="field" style="flex:0 0 auto">
           <button class="ghost small" id="btnRefrescarMunicipio">Actualizar</button>
         </div>
@@ -293,8 +307,15 @@ small.help{ color:var(--muted-2); font-size:11.5px }
           <input id="filtroMesAdmin" type="month">
         </div>
         <div class="field" style="max-width:220px">
+          <label>Filtrar por día</label>
+          <input id="filtroDiaAdmin" type="date">
+        </div>
+        <div class="field" style="max-width:220px">
           <label>Filtrar por municipio</label>
           <select id="filtroMunicipioAdmin"><option value="">Todos</option></select>
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <button class="ghost small" id="btnLimpiarFiltroAdmin">Limpiar filtros</button>
         </div>
         <div class="field" style="flex:0 0 auto">
           <button class="ghost small" id="btnRefrescarAdmin">Actualizar</button>
@@ -594,9 +615,10 @@ async function cargarMunicipiosEnSelectFiltroBodega(){
 async function refrescarBodega(){
   const sesion = sesionActual();
   const mes = document.getElementById('filtroMesBodega').value;
+  const dia = document.getElementById('filtroDiaBodega').value;
   const municipio = document.getElementById('filtroMunicipioBodega').value;
 
-  const panel = await apiCall('panelBodega', { cedula: sesion.cedula, mes, municipio });
+  const panel = await apiCall('panelBodega', { cedula: sesion.cedula, mes, dia, municipio });
   if (!panel.ok){
     document.getElementById('listaCargasBodega').innerHTML = `<div class="empty">${panel.error||'Error al cargar.'}</div>`;
     return;
@@ -606,7 +628,22 @@ async function refrescarBodega(){
 }
 document.getElementById('filtroMunicipioBodega').addEventListener('change', refrescarBodega);
 document.getElementById('btnRefrescarBodega').addEventListener('click', refrescarBodega);
-document.getElementById('filtroMesBodega').addEventListener('change', refrescarBodega);
+document.getElementById('filtroMesBodega').addEventListener('change', ()=>{
+  // Elegir un mes limpia el filtro de día, para que no queden peleando entre sí.
+  document.getElementById('filtroDiaBodega').value = '';
+  refrescarBodega();
+});
+document.getElementById('filtroDiaBodega').addEventListener('change', ()=>{
+  // Elegir un día limpia el filtro de mes, ya que el día es más específico.
+  document.getElementById('filtroMesBodega').value = '';
+  refrescarBodega();
+});
+document.getElementById('btnLimpiarFiltroBodega').addEventListener('click', ()=>{
+  document.getElementById('filtroMesBodega').value = '';
+  document.getElementById('filtroDiaBodega').value = '';
+  document.getElementById('filtroMunicipioBodega').value = '';
+  refrescarBodega();
+});
 
 function pintarCorteKpis(contenedorId, corteRes){
   const el = document.getElementById(contenedorId);
@@ -682,8 +719,9 @@ function pintarListaCargas(contenedorId, cargasRes, modo){
 async function refrescarMunicipio(){
   const sesion = sesionActual();
   const mes = document.getElementById('filtroMesMunicipio').value;
+  const dia = document.getElementById('filtroDiaMunicipio').value;
 
-  const panel = await apiCall('panelMunicipio', { cedula: sesion.cedula, mes });
+  const panel = await apiCall('panelMunicipio', { cedula: sesion.cedula, mes, dia });
   const kpiEl = document.getElementById('resumenMunicipioKpis');
   const resumenRes = panel.ok ? panel.resumen : { ok:false, error: panel.error };
 
@@ -723,7 +761,19 @@ function revisarCargasNuevas(claveSufijo, elementoId, cargas){
   localStorage.setItem(claveVisto, idMasReciente);
 }
 document.getElementById('btnRefrescarMunicipio').addEventListener('click', refrescarMunicipio);
-document.getElementById('filtroMesMunicipio').addEventListener('change', refrescarMunicipio);
+document.getElementById('filtroMesMunicipio').addEventListener('change', ()=>{
+  document.getElementById('filtroDiaMunicipio').value = '';
+  refrescarMunicipio();
+});
+document.getElementById('filtroDiaMunicipio').addEventListener('change', ()=>{
+  document.getElementById('filtroMesMunicipio').value = '';
+  refrescarMunicipio();
+});
+document.getElementById('btnLimpiarFiltroMunicipio').addEventListener('click', ()=>{
+  document.getElementById('filtroMesMunicipio').value = '';
+  document.getElementById('filtroDiaMunicipio').value = '';
+  refrescarMunicipio();
+});
 
 // ============================================================
 // ADMINISTRADOR
@@ -745,9 +795,10 @@ async function cargarMunicipiosEnSelectAdmin(){
 async function refrescarAdmin(){
   const sesion = sesionActual();
   const mes = document.getElementById('filtroMesAdmin').value;
+  const dia = document.getElementById('filtroDiaAdmin').value;
   const municipio = document.getElementById('filtroMunicipioAdmin').value;
 
-  const panel = await apiCall('panelAdmin', { cedula: sesion.cedula, mes, municipio });
+  const panel = await apiCall('panelAdmin', { cedula: sesion.cedula, mes, dia, municipio });
   const kpiEl = document.getElementById('resumenAdminKpis');
   const listaRes = panel.ok ? panel.lista : { ok:false, error: panel.error };
 
@@ -766,8 +817,21 @@ async function refrescarAdmin(){
   if (panel.ok) pintarCorteKpis('corteAdminKpis', panel.corte);
 }
 document.getElementById('btnRefrescarAdmin').addEventListener('click', refrescarAdmin);
-document.getElementById('filtroMesAdmin').addEventListener('change', refrescarAdmin);
+document.getElementById('filtroMesAdmin').addEventListener('change', ()=>{
+  document.getElementById('filtroDiaAdmin').value = '';
+  refrescarAdmin();
+});
+document.getElementById('filtroDiaAdmin').addEventListener('change', ()=>{
+  document.getElementById('filtroMesAdmin').value = '';
+  refrescarAdmin();
+});
 document.getElementById('filtroMunicipioAdmin').addEventListener('change', refrescarAdmin);
+document.getElementById('btnLimpiarFiltroAdmin').addEventListener('click', ()=>{
+  document.getElementById('filtroMesAdmin').value = '';
+  document.getElementById('filtroDiaAdmin').value = '';
+  document.getElementById('filtroMunicipioAdmin').value = '';
+  refrescarAdmin();
+});
 
 function pintarListaCargasAdmin(cargasRes){
   const el = document.getElementById('listaCargasAdmin');
@@ -880,12 +944,13 @@ document.getElementById('btnAprobarSeleccionadas').addEventListener('click', asy
 document.getElementById('btnDescargarExcel').addEventListener('click', async ()=>{
   const sesion = sesionActual();
   const mes = document.getElementById('filtroMesAdmin').value;
+  const dia = document.getElementById('filtroDiaAdmin').value;
   const municipio = document.getElementById('filtroMunicipioAdmin').value;
 
   const btn = document.getElementById('btnDescargarExcel');
   btn.disabled = true; btn.textContent = 'Generando...';
   try{
-    const r = await apiCall('generarReporteExcel', { cedula: sesion.cedula, mes, municipio });
+    const r = await apiCall('generarReporteExcel', { cedula: sesion.cedula, mes, dia, municipio });
     if (!r.ok){ alert(r.error||'No se pudo generar el reporte.'); return; }
 
     const link = document.createElement('a');
