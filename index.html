@@ -411,6 +411,27 @@ function formatoCOP(n){
 }
 
 // ============================================================
+// Municipios: se piden UNA sola vez y se reutilizan para todos
+// los <select> que los necesiten (antes se pedían por separado
+// para cada select, duplicando el viaje al backend).
+// ============================================================
+let _municipiosPromise = null;
+function obtenerMunicipios(){
+  if (!_municipiosPromise){
+    _municipiosPromise = apiCall('listarMunicipios', {}).then(r => r.ok ? r.municipios : []).catch(()=>[]);
+  }
+  return _municipiosPromise;
+}
+async function llenarSelectMunicipios(selectEl){
+  const municipios = await obtenerMunicipios();
+  municipios.forEach(m=>{
+    const opt = document.createElement('option');
+    opt.value = m; opt.textContent = m;
+    selectEl.appendChild(opt);
+  });
+}
+
+// ============================================================
 // LOGIN
 // ============================================================
 let rolActivo = 'bodega';
@@ -481,13 +502,13 @@ function aplicarSesion(sesion){
     document.getElementById('viewBodega').classList.remove('hidden');
     document.getElementById('bodegaNombre').textContent = sesion.nombre;
     document.getElementById('carResponsable').value = sesion.nombre;
-    cargarMunicipiosEnSelect();
-    cargarMunicipiosEnSelectFiltroBodega();
+    llenarSelectMunicipios(document.getElementById('carMunicipio'));
+    llenarSelectMunicipios(document.getElementById('filtroMunicipioBodega'));
     refrescarBodega();
   } else if (sesion.rol === 'admin'){
     document.getElementById('viewAdmin').classList.remove('hidden');
     document.getElementById('adminNombre').textContent = sesion.nombre;
-    cargarMunicipiosEnSelectAdmin();
+    llenarSelectMunicipios(document.getElementById('filtroMunicipioAdmin'));
     refrescarAdmin();
   } else {
     document.getElementById('viewMunicipio').classList.remove('hidden');
@@ -523,20 +544,6 @@ document.getElementById('btnLogoutAdmin').addEventListener('click', cerrarSesion
 // ============================================================
 function sesionActual(){
   try{ return JSON.parse(localStorage.getItem(LS_KEY_SESSION)); }catch(e){ return null; }
-}
-
-async function cargarMunicipiosEnSelect(){
-  try{
-    const r = await apiCall('listarMunicipios', {});
-    const select = document.getElementById('carMunicipio');
-    if (r.ok){
-      r.municipios.forEach(m=>{
-        const opt = document.createElement('option');
-        opt.value = m; opt.textContent = m;
-        select.appendChild(opt);
-      });
-    }
-  }catch(e){ /* si falla, el select queda solo con "Selecciona..." */ }
 }
 
 function actualizarValorTotal(){
@@ -597,20 +604,6 @@ document.getElementById('btnGuardarCarga').addEventListener('click', async ()=>{
     btn.disabled = false; btn.textContent = 'Guardar carga';
   }
 });
-
-async function cargarMunicipiosEnSelectFiltroBodega(){
-  try{
-    const r = await apiCall('listarMunicipios', {});
-    const select = document.getElementById('filtroMunicipioBodega');
-    if (r.ok){
-      r.municipios.forEach(m=>{
-        const opt = document.createElement('option');
-        opt.value = m; opt.textContent = m;
-        select.appendChild(opt);
-      });
-    }
-  }catch(e){ /* si falla, el select queda solo con "Todos" */ }
-}
 
 async function refrescarBodega(){
   const sesion = sesionActual();
@@ -778,20 +771,6 @@ document.getElementById('btnLimpiarFiltroMunicipio').addEventListener('click', (
 // ============================================================
 // ADMINISTRADOR
 // ============================================================
-async function cargarMunicipiosEnSelectAdmin(){
-  try{
-    const r = await apiCall('listarMunicipios', {});
-    const select = document.getElementById('filtroMunicipioAdmin');
-    if (r.ok){
-      r.municipios.forEach(m=>{
-        const opt = document.createElement('option');
-        opt.value = m; opt.textContent = m;
-        select.appendChild(opt);
-      });
-    }
-  }catch(e){ /* si falla, el select queda solo con "Todos" */ }
-}
-
 async function refrescarAdmin(){
   const sesion = sesionActual();
   const mes = document.getElementById('filtroMesAdmin').value;
